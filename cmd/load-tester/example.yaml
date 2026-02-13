@@ -1,0 +1,71 @@
+# load-tester example configuration
+#
+# Simulates 20 concurrent users making requests across 3 domains
+# for 60 seconds, routing through a SASE proxy.
+
+users: 20
+duration: 60s
+ramp_up: 5s
+# proxy: http://sase-connector:8080
+insecure: false
+timeout: 10s
+max_idle_conns_per_host: 100
+
+think_time:
+  min: 100ms
+  max: 500ms
+
+domains:
+  # Internal app behind SASE
+  - name: internal-app
+    base_url: https://internal-app.corp.example.com
+    weight: 5
+    headers:
+      Authorization: "Bearer <token>"
+    endpoints:
+      - name: dashboard
+        path: /api/dashboard
+        weight: 3
+      - name: user-profile
+        path: /api/users/me
+        weight: 2
+      - name: search
+        method: POST
+        path: /api/search
+        weight: 1
+        headers:
+          Content-Type: application/json
+        body: '{"query": "test", "limit": 10}'
+
+  # SaaS application
+  - name: saas-crm
+    base_url: https://crm.saas-vendor.example.com
+    weight: 3
+    endpoints:
+      - name: contacts-list
+        path: /api/v2/contacts
+        weight: 4
+      - name: deals
+        path: /api/v2/deals
+        weight: 2
+      - name: reports
+        path: /api/v2/reports/summary
+        weight: 1
+
+  # External website (general browsing)
+  - name: docs-site
+    base_url: https://docs.example.com
+    weight: 2
+    endpoints:
+      - name: homepage
+        path: /
+        weight: 3
+      - name: getting-started
+        path: /getting-started
+        weight: 2
+      - name: api-reference
+        path: /api-reference
+        weight: 1
+      - name: static-asset
+        path: /assets/main.js
+        weight: 2
